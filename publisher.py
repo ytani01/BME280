@@ -10,7 +10,7 @@ from BME280I2C import BME280I2C
 MYNAME		= sys.argv[0]
 HOSTNAME 	= 'mqtt.beebotte.com'
 PORT		= 8883
-CACERT		= 'mqtt.beebotte.com.pem'
+CACERT		= '/home/pi/mqtt.beebotte.com.pem'
 BME280_ADDR	= 0x76
 
 INTERVAL_SEC	= 300  # sec
