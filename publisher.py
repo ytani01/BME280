@@ -65,21 +65,23 @@ def main():
     bme280 = BME280I2C(BME280_ADDR)
 
     prev_temp = 0.0
+    prev_sec = 0
     while True:
         if not bme280.meas():
             print('Error: BME280')
             sys.exit(1)
 
-        print(bme280.T)
+        ts_now = time.time()
+        ts_str = time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(ts_now))
+        print("%s %5.2f" % (ts_str, bme280.T))
         
-        if abs(bme280.T - prev_temp) >= 0.5:
+        if ( abs( bme280.T - prev_temp ) >= 0.5 ) or ( ts_now - prev_sec >= 3600 ):
             prev_temp = bme280.T
+            prev_sec = ts_now
             
-            now_sec = time.time()
-            ts_str = time.strftime('%Y/%m/%d %H:%M:%S', time.localtime(now_sec))
         
             ## write csv data
-            out_str = '%s, %.1f,C, %.1f,%%, %d,hPa' % (ts_str, bme280.T, bme280.H, bme280.P)
+            out_str = '%d, %s, %.1f,C, %.1f,%%, %d,hPa' % (ts_now, ts_str, bme280.T, bme280.H, bme280.P)
             print(out_str)
             with open(out_file, mode='a') as f:
                 f.write(out_str + '\n')
@@ -88,7 +90,7 @@ def main():
             data_val['data']['temp']	= int(bme280.T * 100) / 100
             data_val['data']['humidity']	= int(bme280.H * 100) / 100
             data_val['data']['pressure']	= int(bme280.P)
-            data_val['ts'] = int(now_sec * 1000)
+            data_val['ts'] = int(ts_now * 1000)
             #print(data_val)
             data_json = json.dumps(data_val)
             print(data_json)
