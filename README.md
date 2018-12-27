@@ -2,6 +2,20 @@
 
 I2C
 
+## 1 bbt_python library
+
+### 1.1 インストール
+
+```bash
+$ sudo pip3 install -U beebotte
+```
+
+### 1.2 Usage
+
+https:/https://github.com/beebotte/bbt_python
+
+
+# DEPRECATED?
 ## 1. 準備
 
 ### 1.1 Beebotte の証明書のダウンロード
@@ -18,7 +32,7 @@ Channel Tokenの文字列をコピー
 $ sudo pip3 install -U paho-mqtt
 ```
 
-## 2. Publish
+## 2 Publish
 
 ```
 #!/usr/bin/env python3
