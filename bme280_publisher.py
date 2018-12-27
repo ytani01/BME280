@@ -14,7 +14,7 @@ HOSTNAME 	= 'api.beebotte.com'
 BME280_ADDR	= 0x76
 
 DEF_OUTFILE	= 'out.csv'
-DEF_INTERVAL	= 300  # sec
+DEF_INTERVAL	= 3600  # sec
 
 #####
 @click.command(help='BME280 MQTT publisher (temp, humidiy, pressure)')
@@ -56,21 +56,19 @@ def main(token_str, ch_name, interval, outfile):
             'time':	False	}
         
         if abs(bme280.T - prev_temp) >= 0.5:
-            print("T")
-            update_flag['t'] = True
+            update_flag['temp'] = True
             prev_temp = bme280.T
         
             bbt.write(ch_name, "temp", bme280.T)
 
         if abs(bme280.H - prev_humidity) >= 5:
-            print("H")
-            update_flag['h'] = True
+            update_flag['humidity'] = True
             prev_humidity = bme280.H
 
             bbt.write(ch_name, "humidity", bme280.H)
 
         if abs(bme280.P - prev_pressure) >= 2:
-            update_flag['p'] = True
+            update_flag['pressure'] = True
             prev_pressure = bme280.P
 
             bbt.write(ch_name, "pressure", round(bme280.P))
@@ -83,26 +81,31 @@ def main(token_str, ch_name, interval, outfile):
             bbt.write(ch_name, "pressure", bme280.P)
             
         out_str = '%d ' % ts_now
+
         if update_flag['time']:
             out_str += '*'
         else:
             out_str += ' '
         out_str += '%s ' % ts_str
-        if update_flag['t']:
+
+        if update_flag['temp']:
             out_str += '*'
         else:
             out_str += ' '
         out_str += '%.1f C ' % bme280.T
-        if update_flag['h']:
+
+        if update_flag['humidity']:
             out_str += '*'
         else:
             out_str += ' '
         out_str += '%.1f %% ' % bme280.H
-        if update_flag['p']:
+
+        if update_flag['pressure']:
             out_str += '*'
         else:
             out_str += ' '
         out_str += '%d hPa ' % bme280.P
+
         print(out_str)
 
         if True in update_flag.values():
