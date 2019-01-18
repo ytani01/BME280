@@ -20,15 +20,11 @@ DEF_INTERVAL	= 3600  # sec
 @click.command(help='BME280 MQTT publisher (temp, humidiy, pressure)')
 @click.argument('token_str', default='')
 @click.argument('ch_name', default='')
-@click.option('--interval', '-i', type=int, default=0,
+@click.option('--interval', '-i', type=int, default=DEF_INTERVAL,
               help='interval seconds')
-@click.option('--outfile', '-o', type=click.Path(), default='',
+@click.option('--outfile', '-o', type=click.Path(), default=DEF_OUTFILE,
               help='output file name')
 def main(token_str, ch_name, interval, outfile):
-    if interval == 0:
-        interval = DEF_INTERVAL
-    if outfile == '':
-        outfile = DEF_OUTFILE
     print('token_str: %s' % token_str)
     print('ch_name: %s' % ch_name)
     print('interval: %d' % interval)
@@ -37,10 +33,11 @@ def main(token_str, ch_name, interval, outfile):
     bbt = BBT(token=token_str, hostname=HOSTNAME)
     bme280 = BME280I2C(BME280_ADDR)
 
-    prev_temp = 0.0
-    prev_humidity = 0.0
-    prev_pressure = 0
-    prev_sec = 0
+    prev = {}
+    prev['temp'] = 0.0
+    prev['humidity'] = 0.0
+    prev['pressure'] = 0
+    prev['sec'] = 0
     while True:
         if not bme280.meas():
             print('Error: BME280')
@@ -55,30 +52,17 @@ def main(token_str, ch_name, interval, outfile):
             'pressure':	False,
             'time':	False	}
         
-        if abs(bme280.T - prev_temp) >= 0.5:
+        if abs(bme280.T - prev['temp']) >= 0.5:
             update_flag['temp'] = True
-            prev_temp = bme280.T
         
-            bbt.write(ch_name, "temp", bme280.T)
-
-        if abs(bme280.H - prev_humidity) >= 5:
+        if abs(bme280.H - prev['humidity']) >= 1.5:
             update_flag['humidity'] = True
-            prev_humidity = bme280.H
 
-            bbt.write(ch_name, "humidity", bme280.H)
-
-        if abs(bme280.P - prev_pressure) >= 2:
+        if abs(bme280.P - prev['pressure']) >= 1:
             update_flag['pressure'] = True
-            prev_pressure = bme280.P
 
-            bbt.write(ch_name, "pressure", round(bme280.P))
-
-        if ts_now - prev_sec > interval:
+        if ts_now - prev['sec'] > interval:
             update_flag['time'] = True
-
-            bbt.write(ch_name, "temp", bme280.T)
-            bbt.write(ch_name, "humidity", bme280.H)
-            bbt.write(ch_name, "pressure", bme280.P)
             
         out_str = '%d ' % ts_now
 
@@ -109,7 +93,14 @@ def main(token_str, ch_name, interval, outfile):
         print(out_str)
 
         if True in update_flag.values():
-            prev_sec = ts_now
+            bbt.write(ch_name, "temp", float('%.1f' % bme280.T))
+            bbt.write(ch_name, "humidity", float('%.1f' % bme280.H))
+            bbt.write(ch_name, "pressure", round(bme280.P))
+
+            prev['temp'] = bme280.T
+            prev['humidity'] = bme280.H
+            prev['pressure'] = bme280.P
+            prev['sec'] = ts_now
 
             with open(outfile, mode='a') as f:
                 f.write(out_str + '\n')
